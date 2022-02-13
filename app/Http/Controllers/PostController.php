@@ -16,7 +16,8 @@ class PostController extends Controller
     public function store(StorePostRequest $request)
     {
         $validated = $request->validated();
-        return Post::create($validated);
+        $data = array_merge($validated, ['user_id' => auth()->user()->id]);
+        return Post::create($data);
     }
 
     public function show($id)
@@ -24,16 +25,14 @@ class PostController extends Controller
         return Post::find($id);
     }
 
-    public function update(UpdatePostRequest $request, Post $post)
+    public function update(UpdatePostRequest $request, $id)
     {
         $validated = $request->validated();
-        $post->update($validated);
-
-        return $post;
+        return Post::find($id)->update($validated);
     }
 
-    public function destroy(Post $post)
+    public function destroy($id)
     {
-        return $post->delete();
+        return Post::find($id)->delete();
     }
 }

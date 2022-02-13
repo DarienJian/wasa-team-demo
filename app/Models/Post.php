@@ -10,11 +10,13 @@ class Post extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'title',
         'content'
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
         'title'   => 'string',
         'content' => 'string',
         'created_at' => 'date:Y-m-d H:i:s',

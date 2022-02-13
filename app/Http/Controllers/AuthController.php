@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Models\UserGroups;
+use App\Models\Group;
 use Illuminate\Support\Facades\Hash;
 
 class  AuthController extends Controller
@@ -19,7 +21,12 @@ class  AuthController extends Controller
             'password'  => bcrypt($validated['password'])
         ]);
 
-        $token = $user->createToken('user:token')->plainTextToken;
+        UserGroups::create([
+            'group_id' => Group::where('group_name', 'normal')->first()->id,
+            'user_id'  => $user->id
+        ]);
+
+        $token = $user->createToken('access:token')->plainTextToken;
 
         $response = [
             'user' => $user,
@@ -37,7 +44,8 @@ class  AuthController extends Controller
             return response(['message' => 'fail login'], 401);
         }
 
-        $token = $user->createToken('user:token')->plainTextToken;
+        $userGroups = $user->groups->pluck('group_name');
+        $token = $user->createToken('access:token', $userGroups->toArray())->plainTextToken;
 
         $response = [
             'user' => $user,
@@ -46,6 +54,8 @@ class  AuthController extends Controller
 
         return response($response, 200);
     }
+
+
 
     public function logout() {
         auth()->user()->tokens()->delete();
