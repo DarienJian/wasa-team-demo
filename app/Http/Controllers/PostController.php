@@ -19,9 +19,9 @@ class PostController extends Controller
         return Post::create($validated);
     }
 
-    public function show(Post $post)
+    public function show($id)
     {
-        return $post;
+        return Post::find($id);
     }
 
     public function update(UpdatePostRequest $request, Post $post)
