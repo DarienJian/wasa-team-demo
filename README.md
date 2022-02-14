@@ -1,64 +1,268 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# 開發 system design
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+### How to start
+```
+git clone git@github.com:DarienJian/wasa-team-demo.git
 
-## About Laravel
+composer install
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+php artisan migrate 初始化tables
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+php artisan db:seed --class=InitProject 填充一些預設情境資料
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 設計情境
 
-## Learning Laravel
+一個簡單的文章功能的api
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+提供一個接口供使用者註冊、登入、登出
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+admin帳號可以管理所有帳號權限 <-admin帳號將會在db:seed填入
+```
+預設admin帳號 admin@wasateam.com 密碼 12345678
+```
+權限預設為
+admin最高管理者     => 可以使用全部功能api,
+manager文章管理者   =>  可對文章做CRUD,
+normal一般使用者
 
-## Laravel Sponsors
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+### APIs
+Header
+```
+Content-Type: application/json
+Authorization: Bearer <token>
+```
 
-### Premium Partners
+### 各種status意思
+|statusCode|description|
+|:--:|:-----:|
+|200|call api 成功|
+|401|登入token驗證失敗|
+|403|非允許權限操作|
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+### 註冊
+:::
+POST
+:::
 
-## Contributing
+```
+/api/register
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|name|required/string|最大255字|
+|email|required/string|email|
+|password|required/string|密碼|
+|password_confirmation|required/string|二次驗證密碼|
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 登入
+:::
+POST
+:::
 
-## Security Vulnerabilities
+```
+/api/login
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+#### parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|email|required/string|email|
+|password|required/string|password|
 
-## License
+#### return.parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|token|string|token|
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+* 登入成功將會得到token, 作為平台上識別用戶的token
+* 需要登入狀態才能使用的api 需在Header將此token 以Bearer Token 的方式傳入
+
+```json
+回傳範例
+{
+    "user": {
+        "id": 1,
+        "name": "admin",
+        "email": "admin@wasateam.com",
+        "email_verified_at": null,
+        "created_at": "2022-02-13T14:18:08.000000Z",
+        "updated_at": "2022-02-13T14:18:08.000000Z",
+        "groups": [
+            {
+                "id": 1,
+                "group_name": "admin",
+                "created_at": "2022-02-13T14:18:08.000000Z",
+                "updated_at": "2022-02-13T14:18:08.000000Z",
+                "pivot": {
+                    "user_id": 1,
+                    "group_id": 1
+                }
+            }
+        ]
+    },
+    "token": "14|VNEXsXcXtHuBmjOqYX7HTQxvYtdSZXruTqDg4j74"
+}
+```
+
+### 登出
+:::success
+POST
+:::
+
+```
+/api/logout
+```
+
+### 建立文章
+:::
+POST
+:::
+
+```
+/api/posts
+```
+
+#### parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|title|required/string|標題|
+|content|required/string|內文|
+
+#### return.parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|title|string|標題|
+|content|string|內文|
+|user_id|int|建立者編號|
+|updated_at|date/Y-m-d H:i:s|更新時間|
+|created_at|date/Y-m-d H:i:s|建立時間|
+|id|int|文章編號|
+
+``` json
+回傳範例
+{
+    "title": "teitle",
+    "content": "123123",
+    "user_id": 3,
+    "updated_at": "2022-02-14 13:08:28",
+    "created_at": "2022-02-14 13:08:28",
+    "id": 2
+}
+```
+
+### 取得文章列表
+:::
+GET
+:::
+
+```
+/api/posts
+```
+
+#### return.parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|title|string|標題|
+|content|string|內文|
+|user_id|int|建立者編號|
+|updated_at|date/Y-m-d H:i:s|更新時間|
+|created_at|date/Y-m-d H:i:s|建立時間|
+|id|int|文章編號|
+
+
+``` json
+回傳範例
+[
+    {
+        "id": 2,
+        "user_id": 3,
+        "title": "teitle",
+        "content": "123123",
+        "created_at": "2022-02-14 13:08:28",
+        "updated_at": "2022-02-14 13:08:28"
+    }
+]
+```
+
+### 取得文章
+:::
+GET
+:::
+
+```
+/api/posts/{id}
+```
+
+#### return.parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|title|string|標題|
+|content|string|內文|
+|user_id|int|建立者編號|
+|updated_at|date/Y-m-d H:i:s|更新時間|
+|created_at|date/Y-m-d H:i:s|建立時間|
+|id|int|文章編號|
+
+
+``` json
+回傳範例
+{
+    "id": 2,
+    "user_id": 3,
+    "title": "teitle",
+    "content": "123123",
+    "created_at": "2022-02-14 13:08:28",
+    "updated_at": "2022-02-14 13:08:28"
+}
+```
+
+### 編輯文章
+:::
+PUT
+:::
+
+```
+/api/posts/{id}   
+```
+#### parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|title|required/string|標題|
+|content|required/string|內文|
+
+
+### 刪除文章
+:::
+DELETE
+:::
+
+```
+/api/posts/{id}   
+```
+
+### 變更帳號權限
+:::
+POST
+:::
+
+```
+/api/setGroup
+```
+
+#### parameters
+|Key|Type|Description|
+|:---:|:----:|:------:|
+|user_id|required/integer|使用者編號|
+|group_id|required/integer|權限編號|
+```
+------------------------
+目前權限的做法還是第一次嘗試使用auth:sanctum這個套件來做,
+他方便是可將權限設定直接寫在token內, 並在middleware直接判斷, 非常直觀且好維護
+
+然後就是因架構不大的關係, 所以將商業邏輯的部份都擺在controller中
+若架構逐漸變大會將商業邏輯的部份轉往Service, 資料運用轉往Repositories, 分層處理
