@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
-use App\Models\UserGroups;
+use App\Models\UserGroup;
 use App\Models\Group;
 use Illuminate\Support\Facades\Hash;
 
@@ -21,7 +21,7 @@ class  AuthController extends Controller
             'password'  => bcrypt($validated['password'])
         ]);
 
-        UserGroups::create([
+        UserGroup::create([
             'group_id' => Group::where('group_name', 'normal')->first()->id,
             'user_id'  => $user->id
         ]);
